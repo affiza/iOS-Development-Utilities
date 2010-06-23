@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+
+# Copyright (c) 2010, Tapmates s.r.o. (www.tapmates.com). All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
+# this file except in compliance with the License.
+#
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed 
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the specific 
+# language governing permissions and limitations under the License.
+#
+# Author(s): Petr Kaleta
+#
+# name: ipaque
+# version: 1.0
+# description: script for building *.ipa packages
+# usage: ./ipaque -h
+#        ./ipaque 'project_name' 'source_dir' 'build_dir' 'deploy_dir'
+
+require 'rubygems'
+require 'zip/zipfilesystem'
+require 'plist'
+
+# required gems
+gem 'rubyzip'
+gem 'plist'
+
+def exit_with_error(message = '')
+  STDERR.puts message
+  exit(1) # error
+end
+
+# script mode switcher
+if ARGV[0].eql? '-h' # show help
+  puts "usage: ./ipaque 'project_name' 'source_dir' 'build_dir' 'deploy_dir'"
+  exit
+elsif ARGV.length != 4 # invalid number of parameters
+  exit_with_error('Invalid number of parameters! Use -h to show usage.')
+else
+  project_name = ARGV[0]
+  source_dir = ARGV[1]
+  build_dir = ARGV[2]
+  deploy_dir = ARGV[3]
+  plist_file = File.join(source_dir, "#{project_name}-Info.plist")
+  artwork_file = File.join(source_dir, 'iTunesArtwork')
+  
+  exit_with_error('Project name can not be empty!') if project_name.empty?
+  exit_with_error("Invalid source directory: #{source_dir}") unless File.directory?(source_dir)
+  exit_with_error("Invalid build directory: #{build_dir}") unless File.directory?(build_dir)
+  exit_with_error("Invalid deploy directory: #{deploy_dir}") unless File.directory?(deploy_dir)
+  exit_with_error("No plist file: #{plist_file}") unless File.exist?(plist_file)
+  exit_with_error("No artwork file: #{artwork_file}") unless File.exist?(artwork_file)
+end
+
+begin
+  build_version = Plist::parse_xml(plist_file)['CFBundleVersion']
+  
+  # *.ipa file path
+  archive = File.join(deploy_dir, "#{project_name}-#{build_version}.ipa")
+
+  # create zip archive
+  Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) { |zipfile|
+    # copy artwork file
+    zipfile.add('iTunesArtwork', artwork_file)
+  
+    # create payload folder with project folder inside
+    zipfile.dir.mkdir("Payload/#{project_name}.app")
+    # copy compiled files to payload folder
+    Dir["#{build_dir}/#{project_name}.app/**/**"].each do |file|
+      zipfile.add(File.join('Payload', "#{project_name}.app", file.sub(build_dir, '')), file)
+    end
+  }
+rescue
+  # delete archive if exist
+  File.delete(archive) if !archive.nil? and File.exist?(archive)
+  
+  exit_with_error('Error during ipaqueing, please check your parameters! Use -h to show usage.')
+end
