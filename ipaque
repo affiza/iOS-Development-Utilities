@@ -21,6 +21,7 @@
 #        ./ipaque 'project_name' 'source_dir' 'build_dir' 'deploy_dir'
 
 require 'rubygems'
+require 'optparse'
 require 'zip/zipfilesystem'
 require 'plist'
 
@@ -29,37 +30,74 @@ gem 'rubyzip'
 gem 'plist'
 
 def exit_with_error(message = '')
-  STDERR.puts message
+  STDERR.puts message unless message.empty?
   exit(1) # error
 end
 
-# script mode switcher
-if ARGV[0].eql? '-h' # show help
-  puts "usage: ./ipaque 'project_name' 'source_dir' 'build_dir' 'deploy_dir'"
-  exit
-elsif ARGV.length != 4 # invalid number of parameters
-  exit_with_error('Invalid number of parameters! Use -h to show usage.')
-else
-  project_name = ARGV[0]
-  source_dir = ARGV[1]
-  build_dir = ARGV[2]
-  deploy_dir = ARGV[3]
-  plist_file = File.join(source_dir, "#{project_name}-Info.plist")
-  artwork_file = File.join(source_dir, 'iTunesArtwork')
-  
-  exit_with_error('Project name can not be empty!') if project_name.empty?
-  exit_with_error("Invalid source directory: #{source_dir}") unless File.directory?(source_dir)
-  exit_with_error("Invalid build directory: #{build_dir}") unless File.directory?(build_dir)
-  exit_with_error("Invalid deploy directory: #{deploy_dir}") unless File.directory?(deploy_dir)
-  exit_with_error("No plist file: #{plist_file}") unless File.exist?(plist_file)
+USAGE = "USAGE: #{$0} [options]" << "\nUse -h for help"
+
+if ARGV.empty?
+  puts USAGE
+  exit_with_error
 end
+
+options = {}
+OptionParser.new do |o|
+  o.banner = USAGE
+  o.separator ""
+  o.separator "Options:"
+
+  o.on("-n", "--name [NAME]",
+    "Project name, REQUIRED") do |project_name|
+    options[:project_name] = project_name
+  end
+
+  o.on("-s", "--source-dir [path]",
+    "Path to source directory, REQUIRED") do |source_dir|
+    options[:source_dir] = source_dir
+  end
+
+  o.on("-b", "--build-dir [path]",
+    "Path to build directory, REQUIRED") do |build_dir|
+    options[:build_dir] = build_dir
+  end
+
+  o.on("-d", "--deploy-dir [path]",
+    "Path to deploy directory, REQUIRED") do |deploy_dir|
+    options[:deploy_dir] = deploy_dir
+  end
+
+  o.on_tail("-h", "--help",
+    "Show this message") do
+    puts o
+    exit
+  end
+end.parse!
+
+# check if all required params are present and valid
+exit_with_error('Project name is required!') if
+    options[:project_name].nil? or options[:project_name].empty?
+exit_with_error('Source directory is required!') if
+    options[:source_dir].nil? or !File.directory?(options[:source_dir])
+exit_with_error('Build directory is required!') if
+    options[:build_dir].nil? or !File.directory?(options[:build_dir])
+exit_with_error('Deploy directory is required!') if
+    options[:deploy_dir].nil? or !File.directory?(options[:deploy_dir])
+
+# plist file must be in root of source directory
+plist_file = File.join(options[:source_dir], "#{options[:project_name]}-Info.plist")
+exit_with_error("No plist file inside source directory!") unless
+    File.exist?(plist_file)
+
+# hypothetical path to artwork
+artwork_file = File.join(options[:source_dir], 'iTunesArtwork')
 
 begin
   # read version number from plist
   build_version = Plist::parse_xml(plist_file)['CFBundleVersion']
   
   # *.ipa file path
-  archive = File.join(deploy_dir, "#{project_name}-#{build_version}.ipa")
+  archive = File.join(options[:deploy_dir], "#{options[:project_name]}-#{build_version}.ipa")
 
   # create zip archive
   Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) { |zipfile|
@@ -67,15 +105,19 @@ begin
     zipfile.add('iTunesArtwork', artwork_file) if File.exist?(artwork_file)
   
     # create payload folder with project folder inside
-    zipfile.dir.mkdir("Payload/#{project_name}.app")
+    zipfile.dir.mkdir("Payload/#{options[:project_name]}.app")
+    
     # copy compiled files to payload folder
-    Dir["#{build_dir}/#{project_name}.app/**/**"].each do |file|
-      zipfile.add(File.join('Payload', "#{project_name}.app", file.sub(build_dir, '')), file)
+    Dir["#{options[:build_dir]}/#{options[:project_name]}.app/**/**"].each do |file|
+      zipfile.add(
+        File.join('Payload', "#{options[:project_name]}.app", file.sub(options[:build_dir], '')),
+        file
+      )
     end
   }
 rescue
   # delete archive if exist
   File.delete(archive) if !archive.nil? and File.exist?(archive)
   
-  exit_with_error('Error during ipaqueing, please check your parameters! Use -h to show usage.')
+  exit_with_error('Error during ipaqueing, please check your parameters!')
 end

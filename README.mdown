@@ -13,7 +13,7 @@ SCRIPT_FILE="$PROJECT_DIR/../ipaque"
 
 if [ $CONFIGURATION = "Debug-ipa" ]; then
 	echo "Running ipaque ..."
-	$SCRIPT_FILE "$EXECUTABLE_NAME" "$PROJECT_DIR" "$DWARF_DSYM_FOLDER_PATH" "$ARCHIVE_ROOT"
+	$SCRIPT_FILE -n "$EXECUTABLE_NAME" -s "$PROJECT_DIR" -b "$DWARF_DSYM_FOLDER_PATH" -d "$ARCHIVE_ROOT"
 fi
 </code></pre>
 
