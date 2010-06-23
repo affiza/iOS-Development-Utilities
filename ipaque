@@ -52,10 +52,10 @@ else
   exit_with_error("Invalid build directory: #{build_dir}") unless File.directory?(build_dir)
   exit_with_error("Invalid deploy directory: #{deploy_dir}") unless File.directory?(deploy_dir)
   exit_with_error("No plist file: #{plist_file}") unless File.exist?(plist_file)
-  exit_with_error("No artwork file: #{artwork_file}") unless File.exist?(artwork_file)
 end
 
 begin
+  # read version number from plist
   build_version = Plist::parse_xml(plist_file)['CFBundleVersion']
   
   # *.ipa file path
@@ -63,8 +63,8 @@ begin
 
   # create zip archive
   Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) { |zipfile|
-    # copy artwork file
-    zipfile.add('iTunesArtwork', artwork_file)
+    # copy artwork file if exists
+    zipfile.add('iTunesArtwork', artwork_file) if File.exist?(artwork_file)
   
     # create payload folder with project folder inside
     zipfile.dir.mkdir("Payload/#{project_name}.app")
