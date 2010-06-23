@@ -15,10 +15,10 @@
 # Author(s): Petr Kaleta
 #
 # name: ipaque
-# version: 1.0
+# version: 1.0.1
 # description: script for building *.ipa packages
 # usage: ./ipaque -h
-#        ./ipaque 'project_name' 'source_dir' 'build_dir' 'deploy_dir'
+#        ./ipaque -n 'project_name' -s 'source_dir' -b 'build_dir' -d 'deploy_dir'
 
 require 'rubygems'
 require 'optparse'
