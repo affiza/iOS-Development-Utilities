@@ -17,9 +17,9 @@ if [ $CONFIGURATION = "Debug-ipa" ]; then
 fi
 </code></pre>
 
-ipaque script requires following attributes:
+ipaque script requires following parameters:
 
 * **$EXECUTABLE_NAME** - executable name
 * **$PROJECT_DIR** - root directory with the source code, which has to contain AppName-Info.plist and iTunesArtwork file which is a 512x512 tiff file with the application icon
 * **$DWARF_DSYM_FOLDER_PATH** - source directory for the final binary file
-* **ARCHIVE_ROOT** directory where the ifnal ipa package will be saved in this name format: AppName-0.1.ipa. Version number comes from the project's Info.plist
+* **ARCHIVE_ROOT** directory where the final ipa package will be saved in this name format: AppName-0.1.ipa. Version number comes from the project's Info.plist
