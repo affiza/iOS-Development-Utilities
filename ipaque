@@ -122,7 +122,7 @@ begin
 
   # create zip archive
   say 'Creating archive...'
-  Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) { |zipfile|
+  Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) do |zipfile|
     # copy artwork file if exists
     if File.exist?(artwork_file)
       say "Copying itunes artwork: #{artwork_file}"
@@ -130,8 +130,8 @@ begin
     end
   
     # create payload folder with project folder inside
-    say "Creating directory: Payload"
-    zipfile.dir.mkdir("Payload")
+    say 'Creating directory: Payload'
+    zipfile.dir.mkdir('Payload')
     
     # copy compiled files to payload folder
     binary_path = File.join(@options[:build_dir], "#{@options[:project_name]}.app", '**/**')
@@ -141,7 +141,7 @@ begin
       say "Adding file to archive from: #{file} to #{file_path}"
       zipfile.add(file_path, file)
     end
-  }
+  end
   say 'Archive successfully created!'
 rescue
   # delete archive if exist
@@ -150,6 +150,8 @@ rescue
     File.delete(archive)
     say 'Archive removed...'
   end
+  
+  say $!
   
   exit_with_error('Error during ipaqueing, please check your parameters!')
 end
