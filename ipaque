@@ -15,7 +15,7 @@
 # Author(s): Petr Kaleta
 #
 # name: ipaque
-# version: 1.0.1
+# version: 1.0.2
 # description: script for building *.ipa packages
 # usage: ./ipaque -h
 #        ./ipaque -n 'project_name' -s 'source_dir' -b 'build_dir' -d 'deploy_dir'
@@ -30,8 +30,12 @@ gem 'rubyzip'
 gem 'plist'
 
 def exit_with_error(message = '')
-  STDERR.puts message unless message.empty?
+  STDERR.puts "#{message} Use -v to enter --verbose mode" unless message.empty?
   exit(1) # error
+end
+
+def say(message)
+  puts "* #{message}" if options[:verbose]
 end
 
 USAGE = "USAGE: #{$0} [options]" << "\nUse -h for help"
@@ -42,45 +46,58 @@ if ARGV.empty?
 end
 
 options = {}
-OptionParser.new do |o|
-  o.banner = USAGE
-  o.separator ""
-  o.separator "Options:"
+OptionParser.new do |opts|
+  opts.banner = USAGE
+  opts.separator ''
+  opts.separator 'Options:'
 
-  o.on("-n", "--name [NAME]",
-    "Project name, REQUIRED") do |project_name|
+  options[:verbose] = false
+  opts.on('-v', '--verbose',
+    'Output more information') do
+    options[:verbose] = true
+  end
+
+  opts.on('-n', '--name [NAME]',
+    'Project name, REQUIRED') do |project_name|
     options[:project_name] = project_name
   end
 
-  o.on("-s", "--source-dir [path]",
-    "Path to source directory, REQUIRED") do |source_dir|
+  opts.on('-s', '--source-dir [path]',
+    'Path to source directory, REQUIRED') do |source_dir|
     options[:source_dir] = source_dir
   end
 
-  o.on("-b", "--build-dir [path]",
-    "Path to build directory, REQUIRED") do |build_dir|
+  opts.on('-b', '--build-dir [path]',
+    'Path to build directory, REQUIRED') do |build_dir|
     options[:build_dir] = build_dir
   end
 
-  o.on("-d", "--deploy-dir [path]",
-    "Path to deploy directory, REQUIRED") do |deploy_dir|
+  opts.on('-d', '--deploy-dir [path]',
+    'Path to deploy directory, REQUIRED') do |deploy_dir|
     options[:deploy_dir] = deploy_dir
   end
-
-  o.on_tail("-h", "--help",
-    "Show this message") do
-    puts o
+  
+  opts.on_tail('-h', '--help',
+    'Show this message') do
+    puts opts
     exit
   end
 end.parse!
 
 # check if all required params are present and valid
+say "Project name: #{options[:project_name]}"
 exit_with_error('Project name is required!') if
     options[:project_name].nil? or options[:project_name].empty?
+    
+say "Source directory: #{options[:source_dir]}"
 exit_with_error('Source directory is required!') if
     options[:source_dir].nil? or !File.directory?(options[:source_dir])
+    
+say "Build directory: #{options[:build_dir]}"
 exit_with_error('Build directory is required!') if
     options[:build_dir].nil? or !File.directory?(options[:build_dir])
+    
+say "Deploy directory: #{options[:deploy_dir]}"
 exit_with_error('Deploy directory is required!') if
     options[:deploy_dir].nil? or !File.directory?(options[:deploy_dir])
 
@@ -94,30 +111,42 @@ artwork_file = File.join(options[:source_dir], 'iTunesArtwork')
 
 begin
   # read version number from plist
+  say "Parsing build version from plist file: #{plist_file}"
   build_version = Plist::parse_xml(plist_file)['CFBundleVersion']
+  say "Parsed: #{build_version}"
   
   # *.ipa file path
   archive = File.join(options[:deploy_dir], "#{options[:project_name]}-#{build_version}.ipa")
+  say "Archive path: #{archive}"
 
   # create zip archive
+  say 'Creating archive...'
   Zip::ZipFile.open(archive, Zip::ZipFile::CREATE) { |zipfile|
     # copy artwork file if exists
-    zipfile.add('iTunesArtwork', artwork_file) if File.exist?(artwork_file)
+    if File.exist?(artwork_file)
+      say "Copying itunes artwork: #{artwork_file}"
+      zipfile.add('iTunesArtwork', artwork_file)
+    end
   
     # create payload folder with project folder inside
+    say "Creating directories: Payload/#{options[:project_name]}.app"
     zipfile.dir.mkdir("Payload/#{options[:project_name]}.app")
     
     # copy compiled files to payload folder
     Dir["#{options[:build_dir]}/#{options[:project_name]}.app/**/**"].each do |file|
-      zipfile.add(
-        File.join('Payload', "#{options[:project_name]}.app", file.sub(options[:build_dir], '')),
-        file
-      )
+      file_path = File.join('Payload', "#{options[:project_name]}.app", file.sub(options[:build_dir], ''))
+      say "Adding file to archive from: #{file} to #{file_path}"
+      zipfile.add(file_path, file)
     end
   }
+  say 'Archive successfully created!'
 rescue
   # delete archive if exist
-  File.delete(archive) if !archive.nil? and File.exist?(archive)
+  if !archive.nil? and File.exist?(archive)
+    say "Removing invalid archive: #{archive}"
+    File.delete(archive)
+    say 'Archive removed...'
+  end
   
   exit_with_error('Error during ipaqueing, please check your parameters!')
 end
