@@ -15,7 +15,7 @@
 # Author(s): Petr Kaleta
 #
 # name: ipaque
-# version: 1.0.2
+# version: 1.0.3
 # description: script for building *.ipa packages
 # usage: ./ipaque -h
 #        ./ipaque -n 'project_name' -s 'source_dir' -b 'build_dir' -d 'deploy_dir'
@@ -28,6 +28,8 @@ require 'plist'
 # required gems
 gem 'rubyzip'
 gem 'plist'
+
+options = {}
 
 def exit_with_error(message = '')
   STDERR.puts "#{message} Use -v to enter --verbose mode" unless message.empty?
@@ -45,7 +47,6 @@ if ARGV.empty?
   exit_with_error
 end
 
-options = {}
 OptionParser.new do |opts|
   opts.banner = USAGE
   opts.separator ''
