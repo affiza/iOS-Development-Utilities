@@ -15,7 +15,7 @@
 # Author(s): Petr Kaleta
 #
 # name: ipaque
-# version: 1.0.4
+# version: 1.0.5
 # description: script for building *.ipa packages
 # usage: ./ipaque -h
 #        ./ipaque -n 'project_name' -s 'source_dir' -b 'build_dir' -d 'deploy_dir'
@@ -130,12 +130,14 @@ begin
     end
   
     # create payload folder with project folder inside
-    say "Creating directories: Payload/#{@options[:project_name]}.app"
-    zipfile.dir.mkdir("Payload/#{@options[:project_name]}.app")
+    say "Creating directory: Payload"
+    zipfile.dir.mkdir("Payload")
     
     # copy compiled files to payload folder
-    Dir["#{@options[:build_dir]}/#{@options[:project_name]}.app/**/**"].each do |file|
-      file_path = File.join('Payload', "#{@options[:project_name]}.app", file.sub(@options[:build_dir], ''))
+    binary_path = File.join(@options[:build_dir], "#{@options[:project_name]}.app", '**/**')
+    say "Copying files from: #{binary_path}"
+    Dir[binary_path].each do |file|
+      file_path = File.join('Payload', file.sub(@options[:build_dir], ''))
       say "Adding file to archive from: #{file} to #{file_path}"
       zipfile.add(file_path, file)
     end
