@@ -15,7 +15,7 @@
 # Author(s): Petr Kaleta
 #
 # name: ipaque
-# version: 1.0.5
+# version: 1.0.6
 # description: script for building *.ipa packages
 # usage: ./ipaque -h
 #        ./ipaque -n 'project_name' -s 'source_dir' -b 'build_dir' -d 'deploy_dir'
@@ -143,7 +143,7 @@ begin
     end
   end
   say 'Archive successfully created!'
-rescue
+rescue Exception => e
   # delete archive if exist
   if !archive.nil? and File.exist?(archive)
     say "Removing invalid archive: #{archive}"
@@ -151,7 +151,7 @@ rescue
     say 'Archive removed...'
   end
   
-  say $!
+  say e.inspect
   
   exit_with_error('Error during ipaqueing, please check your parameters!')
 end
