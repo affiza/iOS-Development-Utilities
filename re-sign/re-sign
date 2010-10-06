@@ -1,0 +1,70 @@
+#
+# (C) 2010 Tapmates, Inc.
+# Written by Chiefly Izzy <izzy@tapmates.com>
+# 
+# Do whatever you want to do with this script ;-)
+#
+
+#!/bin/bash
+
+NEW_CERT="iPhone Developer"
+
+#
+# Check for number of arguments != 1 -> usage
+#
+if [ $# -ne 1 ]; then
+cat << EOF
+
+  Usage:
+
+      re-sign-app.sh MyGreatApp.app/MyGreatApp
+   or re-sign-app.sh MyGreatApp.app/
+   or re-sign-app.sh MyGreatApp.app
+
+  Still no clue? Ask ...
+
+      Chiefly Izzy <izzy@tapmates.com>
+
+EOF
+	exit -1
+fi
+
+APP_BINARY="$1"
+
+#
+# Argument is .app directory? If so, add app binary
+#
+if [ -d "$APP_BINARY" ]; then
+	BINARY_FILE=`basename "$APP_BINARY" | sed 's/\.app\/*$//'`
+	APP_BINARY+="/$BINARY_FILE"
+fi
+
+#
+# Check if .app binary does exist.
+#
+if [ ! -f "$APP_BINARY" ]; then
+	echo "$1 doesn't exist."
+	exit -1
+fi
+
+#
+# Re-sign app
+#
+export CODESIGN_ALLOCATE=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate
+
+echo "App to re-sign : $APP_BINARY"
+echo "New certificate: $NEW_CERT"
+
+echo -n "Re-signing app : "
+codesign -f -s "$NEW_CERT" -vv $APP_BINARY &> /dev/null 
+if [ $? -eq 0 ]; then
+	echo "success"
+else
+	echo "failed with return code $?"
+	exit -1
+fi
+
+echo -e "\nNew authority ...\n"
+codesign -d -vv $APP_BINARY 2>&1 | grep Authority | grep -v Apple
+
+echo -e "\nFeel free to drag & drop re-signed app to your iTunes window ...\n"

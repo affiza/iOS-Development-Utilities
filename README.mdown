@@ -1,25 +1,5 @@
-Automatic creation of *.ipa packages
-====================================
+iOS Development Utilities
+=========================
 
-Installation
-------------
-
-1. Download the ipaque script
-2. In your Xcode project add Build Script (Target -> Add -> New Build Phase -> New Run Script Build Phase)
-3. Add the following code:
-<pre><code>
-ARCHIVE_ROOT="$PROJECT_DIR/../builds"
-SCRIPT_FILE="$PROJECT_DIR/../ipaque"
-
-if [ $CONFIGURATION = "Debug-ipa" ]; then
-	echo "Running ipaque ..."
-	$SCRIPT_FILE -n "$EXECUTABLE_NAME" -s "$PROJECT_DIR" -b "$DWARF_DSYM_FOLDER_PATH" -d "$ARCHIVE_ROOT"
-fi
-</code></pre>
-
-ipaque script requires following parameters:
-
-* **$EXECUTABLE_NAME** - executable name
-* **$PROJECT_DIR** - root directory with the source code, which has to contain AppName-Info.plist and iTunesArtwork file which is a 512x512 tiff file with the application icon
-* **$DWARF_DSYM_FOLDER_PATH** - source directory for the final binary file
-* **ARCHIVE_ROOT** directory where the final ipa package will be saved in this name format: AppName-0.1.ipa. Version number comes from the project's Info.plist
+* ipaque - automatic creation of .ipa packages
+* re-sign - re-sign your binary with your development certificate

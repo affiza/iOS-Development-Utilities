@@ -1,0 +1,13 @@
+Distribution binary re-sign
+===========================
+
+This script re-sign your iOS application AppStore binary (= distribution)
+with your iPhone Developer certificate. You can test this binary on your
+iOS device.
+
+Usage
+-----
+
+1. Run re-sign script without arguments to see what you can pass to it.
+
+** WARNING ** Backup your app binary. No copy is made, direct modifications.
